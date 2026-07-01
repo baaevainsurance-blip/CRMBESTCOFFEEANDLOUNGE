@@ -419,7 +419,22 @@
 <button class="dark-btn" onclick="loadRecords()">Actualizar lista</button>
 <button class="danger-btn" onclick="deleteAllRecords()">Borrar todos</button>
 </div>
-<div id="recordsList"></div>
+
+    <div class="grid no-print" id="dateFilterBox" style="margin-top:15px;">
+      <div>
+        <label>Filtrar desde</label>
+        <input type="date" id="filterStartDate" onchange="loadRecords()">
+      </div>
+      <div>
+        <label>Filtrar hasta</label>
+        <input type="date" id="filterEndDate" onchange="loadRecords()">
+      </div>
+    </div>
+    <div class="actions no-print">
+      <button class="dark-btn" onclick="clearDateFilter()">Limpiar filtro</button>
+    </div>
+
+    <div id="recordsList"></div>
 </section>
 <section class="section" id="config">
 <h2>Configuración</h2>
@@ -572,12 +587,27 @@
     const records = JSON.parse(localStorage.getItem("cashReconciliationRecords") || "[]");
     const box = document.getElementById("recordsList");
 
+    const startDate = document.getElementById("filterStartDate") ? document.getElementById("filterStartDate").value : "";
+    const endDate = document.getElementById("filterEndDate") ? document.getElementById("filterEndDate").value : "";
+
+    let filteredRecords = records.filter(r=>{
+      if(!r.fecha) return false;
+      if(startDate && r.fecha < startDate) return false;
+      if(endDate && r.fecha > endDate) return false;
+      return true;
+    });
+
     if(records.length === 0){
       box.innerHTML = "<p class='small'>No hay registros guardados todavía.</p>";
       return;
     }
 
-    box.innerHTML = records.map(r=>`
+    if(filteredRecords.length === 0){
+      box.innerHTML = "<p class='small'>No hay registros dentro del rango de fechas seleccionado.</p>";
+      return;
+    }
+
+    box.innerHTML = filteredRecords.map(r=>`
       <div class="record-card">
         <h4>${r.fecha || "Sin fecha"} - ${r.evento || "Sin evento"}</h4>
         <p>
@@ -591,6 +621,12 @@
         <button class="danger-btn" onclick="deleteRecord(${r.id})">Eliminar</button>
       </div>
     `).join("");
+  }
+
+  function clearDateFilter(){
+    if(document.getElementById("filterStartDate")) document.getElementById("filterStartDate").value = "";
+    if(document.getElementById("filterEndDate")) document.getElementById("filterEndDate").value = "";
+    loadRecords();
   }
 
   function deleteRecord(id){
